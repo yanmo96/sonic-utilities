@@ -532,4 +532,51 @@ def test_mirror_session_erspan_add_with_negative_sample_rate():
         ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
          "--sample_rate", "-1"])
     assert result.exit_code != 0
-    assert ERR_MSG_VALUE_FAILURE in result.stdout or "is not in the range" in result.stdout
+    assert ('must be 0 or in range 2..4294967295' in result.output
+            or ERR_MSG_VALUE_FAILURE in result.stdout
+            or "is not in the range" in result.stdout)
+
+
+def test_mirror_session_erspan_add_sample_rate_boundary():
+    """Align with YANG / #4625: 0 or 2..uint32_max."""
+    runner = CliRunner()
+
+    # sample_rate=1 (below minimum of 2, should fail)
+    result = runner.invoke(
+            config.config.commands["mirror_session"].commands["erspan"].commands["add"],
+            ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
+             "--sample_rate", "1"])
+    assert result.exit_code != 0
+    assert 'must be 0 or in range 2..4294967295' in result.output
+
+    # sample_rate=2 (minimum valid, should pass)
+    with mock.patch('config.main.add_erspan') as _:
+        result = runner.invoke(
+                config.config.commands["mirror_session"].commands["erspan"].commands["add"],
+                ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
+                 "--sample_rate", "2"])
+        assert result.exit_code == 0
+
+    # sample_rate=10000 (lab target, should pass)
+    with mock.patch('config.main.add_erspan') as _:
+        result = runner.invoke(
+                config.config.commands["mirror_session"].commands["erspan"].commands["add"],
+                ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
+                 "--sample_rate", "10000"])
+        assert result.exit_code == 0
+
+    # sample_rate=4294967295 (maximum valid, should pass)
+    with mock.patch('config.main.add_erspan') as _:
+        result = runner.invoke(
+                config.config.commands["mirror_session"].commands["erspan"].commands["add"],
+                ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
+                 "--sample_rate", "4294967295"])
+        assert result.exit_code == 0
+
+    # sample_rate=4294967296 (above maximum, should fail)
+    result = runner.invoke(
+            config.config.commands["mirror_session"].commands["erspan"].commands["add"],
+            ["test_session", "1.1.1.1", "2.2.2.2", "8", "64",
+             "--sample_rate", "4294967296"])
+    assert result.exit_code != 0
+    assert 'must be 0 or in range 2..4294967295' in result.output

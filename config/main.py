@@ -132,6 +132,29 @@ QUEUE_RANGE = click.IntRange(min=0, max=255)
 GRE_TYPE_RANGE = click.IntRange(min=0, max=65535)
 ADHOC_VALIDATION = True
 
+# Align with sonic-mirror-session YANG (swss#4625 / buildimage#26756):
+# sample_rate: 0 = full mirror (field omitted); else 2..uint32_max (1-in-N)
+# truncate_size: 0 = no truncation; else 64..9216
+SAMPLE_RATE_MIN = 2
+SAMPLE_RATE_MAX = 0xFFFFFFFF  # uint32 max
+TRUNCATE_SIZE_MIN = 64
+TRUNCATE_SIZE_MAX = 9216
+
+
+def validate_sample_rate(ctx, param, value):
+    if value != 0 and (value < SAMPLE_RATE_MIN or value > SAMPLE_RATE_MAX):
+        raise click.BadParameter(
+            f"must be 0 or in range {SAMPLE_RATE_MIN}..{SAMPLE_RATE_MAX} (uint32 max)")
+    return value
+
+
+def validate_truncate_size(ctx, param, value):
+    if value != 0 and (value < TRUNCATE_SIZE_MIN or value > TRUNCATE_SIZE_MAX):
+        raise click.BadParameter(
+            f"must be 0 or in range {TRUNCATE_SIZE_MIN}..{TRUNCATE_SIZE_MAX}")
+    return value
+
+
 if os.environ.get("UTILITIES_UNIT_TESTING", "0") in ("1", "2"):
     temp_system_reload_lockfile = tempfile.NamedTemporaryFile()
     SYSTEM_RELOAD_LOCK = temp_system_reload_lockfile.name
@@ -3274,10 +3297,10 @@ def erspan(ctx):
 @click.argument('src_port', metavar='[src_port]', required=False)
 @click.argument('direction', metavar='[direction]', required=False)
 @click.option('--policer')
-@click.option('--sample_rate', type=click.IntRange(min=0), default=0,
-              help='Sampling rate (1-in-N). 0 = full mirror.')
-@click.option('--truncate_size', type=click.IntRange(min=0), default=0,
-              help='Truncation size in bytes. 0 = no truncation.')
+@click.option('--sample_rate', type=int, default=0, callback=validate_sample_rate,
+              help="Sampling rate (1-in-N), 2..4294967295. 0 disables sampling")
+@click.option('--truncate_size', type=int, default=0, callback=validate_truncate_size,
+              help="Truncation size in bytes, 64..9216. 0 disables truncation")
 def add(session_name, src_ip, dst_ip, dscp, ttl, gre_type, queue,
         policer, src_port, direction, sample_rate, truncate_size):
     """ Add ERSPAN mirror session """

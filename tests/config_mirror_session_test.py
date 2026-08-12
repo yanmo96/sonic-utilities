@@ -161,19 +161,19 @@ def test_mirror_session_erspan_add():
                 config.config.commands["mirror_session"].commands["erspan"].commands["add"],
                 ["test_session", "100.1.1.1", "2.2.2.2", "8", "63", "10", "100"])
 
-            mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 10, 100, None, None, None, 0, 0)
+        mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 10, 100, None, None, None, 0, 0)
 
         result = runner.invoke(
                 config.config.commands["mirror_session"].commands["erspan"].commands["add"],
                 ["test_session", "100.1.1.1", "2.2.2.2", "8", "63", "0x1234", "100"])
 
-            mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 0x1234, 100, None, None, None, 0, 0)
+        mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 0x1234, 100, None, None, None, 0, 0)
 
         result = runner.invoke(
                 config.config.commands["mirror_session"].commands["erspan"].commands["add"],
                 ["test_session", "100.1.1.1", "2.2.2.2", "8", "63", "0", "0"])
 
-            mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 0, 0, None, None, None, 0, 0)
+        mocked.assert_called_with("test_session", "100.1.1.1", "2.2.2.2", 8, 63, 0, 0, None, None, None, 0, 0)
 
 
 @patch("validated_config_db_connector.device_info.is_yang_config_validation_enabled", mock.Mock(return_value=True))
